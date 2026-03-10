@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { HNClient } from '../api/client.js';
-import { HNItem } from '../api/types.js';
 import { timeAgo, stripHtml, hnUrl } from '../utils/format.js';
 
 const getCommentsSchema = z.object({
@@ -34,7 +33,7 @@ export const getCommentsDefinition = {
 };
 
 type CommentLine = { text: string };
-let commentCount = 0;
+type Counter = { value: number };
 
 async function fetchComments(
   client: HNClient,
@@ -43,13 +42,14 @@ async function fetchComments(
   maxDepth: number,
   limit: number,
   lines: CommentLine[],
+  counter: Counter,
 ): Promise<void> {
-  if (currentDepth > maxDepth || commentCount >= limit || ids.length === 0) return;
+  if (currentDepth > maxDepth || counter.value >= limit || ids.length === 0) return;
 
   const items = await client.getItems(ids);
 
   for (const item of items) {
-    if (commentCount >= limit) break;
+    if (counter.value >= limit) break;
     if (!item || item.deleted || item.dead) continue;
 
     const indent = '  '.repeat(currentDepth);
@@ -64,10 +64,10 @@ async function fetchComments(
       }
     }
     lines.push({ text: '' });
-    commentCount++;
+    counter.value++;
 
     if (item.kids && item.kids.length > 0 && currentDepth < maxDepth) {
-      await fetchComments(client, item.kids, currentDepth + 1, maxDepth, limit, lines);
+      await fetchComments(client, item.kids, currentDepth + 1, maxDepth, limit, lines, counter);
     }
   }
 }
@@ -88,10 +88,10 @@ export async function getComments(client: HNClient, args: unknown): Promise<{ co
     ];
 
     const lines: CommentLine[] = [];
-    commentCount = 0;
+    const counter: Counter = { value: 0 };
 
     if (story.kids && story.kids.length > 0) {
-      await fetchComments(client, story.kids, 0, params.depth, params.limit, lines);
+      await fetchComments(client, story.kids, 0, params.depth, params.limit, lines, counter);
     }
 
     if (lines.length === 0) {

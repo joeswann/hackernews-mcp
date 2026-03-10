@@ -1,4 +1,4 @@
-import { Config } from '../config/index.js';
+import type { Config } from '../config/index.js';
 import { HNItem, HNUser, AlgoliaResponse, Feed } from './types.js';
 
 const FEED_ENDPOINTS: Record<Feed, string> = {

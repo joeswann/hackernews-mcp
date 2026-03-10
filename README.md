@@ -11,6 +11,10 @@ A read-only MCP (Model Context Protocol) server for Hacker News. Enables Claude 
 
 ## Installation
 
+### Prerequisites
+
+- Node.js >= 18.0.0
+
 ### From Source
 
 1. Clone this repository
